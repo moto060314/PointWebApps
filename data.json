@@ -2,9 +2,9 @@
   {
     "name": "RED",
     "cosplay": 0,
-    "muscle": 1,
+    "muscle": 0,
     "events": {
-      "grip": 30,
+      "grip": 0,
       "situp30": 0,
       "wallSit": 0,
       "pushup60": 0,
@@ -18,9 +18,9 @@
   {
     "name": "BLUE",
     "cosplay": 0,
-    "muscle": 3,
+    "muscle": 0,
     "events": {
-      "grip": 60,
+      "grip": 0,
       "situp30": 0,
       "wallSit": 0,
       "pushup60": 0,
@@ -34,9 +34,9 @@
   {
     "name": "YELLOW",
     "cosplay": 0,
-    "muscle": 10,
+    "muscle": 0,
     "events": {
-      "grip": 81,
+      "grip": 0,
       "situp30": 0,
       "wallSit": 0,
       "pushup60": 0,
