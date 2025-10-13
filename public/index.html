@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>チームランキング</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>チーム得点ランキング</h1>
+    <div id="ranking" class="ranking"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      // Socket.IO クライアント接続（サーバーからの更新を受けて再描画）
+      const socket = io();
+      socket.on('teamsUpdated', (teams) => {
+        console.log('teamsUpdated received', teams);
+        renderRanking(teams);
+      });
+
+      async function fetchData() {
+        const res = await fetch('/api/teams');
+        const teams = await res.json();
+        renderRanking(teams);
+      }
+
+      function calcTotal(team) {
+        return team.cosplay + team.muscle;
+      }
+
+      function renderRanking(teams) {
+        const rankingDiv = document.getElementById('ranking');
+        const sorted = [...teams].sort((a, b) => calcTotal(b) - calcTotal(a));
+
+        // 以前の順位を localStorage から取得
+        const prevRanks = JSON.parse(localStorage.getItem('prevRanks') || '{}');
+
+        rankingDiv.innerHTML = '';
+
+        // チーム名 -> カラーのマップ（必要に応じて調整）
+        const colorMap = {
+          RED: '#ff3333',
+          BLUE: '#3399ff',
+          YELLOW: '#ffcc00',
+          GREEN: '#33cc66',
+        };
+
+        // 新しい順位マップを作成（同点は同順位にする — コンペティションランク: 1,1,3...）
+        const newRanks = {};
+        let prevTotal = null;
+        let prevRank = 0;
+        sorted.forEach((team, i) => {
+          const total = calcTotal(team);
+          let rank;
+          if (prevTotal !== null && total === prevTotal) {
+            // 前のチームと同スコア -> 同順位
+            rank = prevRank;
+          } else {
+            // スコアが異なれば現在インデックス+1 を順位とする
+            rank = i + 1;
+            prevTotal = total;
+            prevRank = rank;
+          }
+          newRanks[team.name] = rank;
+        });
+
+        sorted.forEach((team, i) => {
+          const color = colorMap[team.name] || team.name.toLowerCase();
+          const cur = newRanks[team.name];
+          const prev = prevRanks[team.name];
+
+          // 矢印を決定（初回は矢印を出さない）
+          let arrowHTML = '';
+          if (typeof prev === 'number') {
+            if (prev > cur) {
+              arrowHTML = `<span class="move-arrow up">↑</span>`;
+            } else if (prev < cur) {
+              arrowHTML = `<span class="move-arrow down">↓</span>`;
+            } else {
+              arrowHTML = `<span class="move-arrow same">→</span>`;
+            }
+          }
+
+          const rankHTML = `
+          <div class="rank-item" data-team="${team.name}">
+            <div class="rank-left">
+              <div class="rank-num" style="background: ${color};">${cur}</div>
+              ${arrowHTML}
+            </div>
+            <div class="team-name">${team.name}</div>
+            <div class="score">${calcTotal(team)} pt</div>
+          </div>
+          <div class="details" style="padding-left:70px;">
+            コスプレ: ${team.cosplay} / 筋肉バスターズ: ${team.muscle}
+          </div>
+        `;
+          rankingDiv.insertAdjacentHTML('beforeend', rankHTML);
+        });
+
+        // 新しい順位を保存（次回の比較用）
+        localStorage.setItem('prevRanks', JSON.stringify(newRanks));
+
+        // 矢印にアニメーション付与（描画後）
+        setTimeout(() => {
+          document
+            .querySelectorAll('.move-arrow.up')
+            .forEach((el) => el.classList.add('bump'));
+          document
+            .querySelectorAll('.move-arrow.down')
+            .forEach((el) => el.classList.add('bump'));
+        }, 50);
+      }
+
+      fetchData();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>スコア入力</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>スコア入力フォーム</h1>
+    <form id="scoreForm"></form>
+    <button id="saveBtn">保存</button>
+
+    <p id="msg" style="text-align: center; color: green"></p>
+
+    <script>
+      async function loadTeams() {
+        const res = await fetch('/api/teams');
+        const teams = await res.json();
+        const form = document.getElementById('scoreForm');
+        form.innerHTML = teams
+          .map(
+            (team) => `
+        <div class="form-item">
+          <h3>${team.name}</h3>
+          コスプレ：<input type="number" id="${team.name}-cos" value="${team.cosplay}"> pt<br>
+          筋肉：<input type="number" id="${team.name}-mus" value="${team.muscle}"> pt
+        </div>
+        <hr>
+      `
+          )
+          .join('');
+      }
+
+      document.getElementById('saveBtn').addEventListener('click', async () => {
+        const res = await fetch('/api/teams');
+        let teams = await res.json();
+
+        teams = teams.map((team) => ({
+          name: team.name,
+          cosplay: Number(document.getElementById(`${team.name}-cos`).value),
+          muscle: Number(document.getElementById(`${team.name}-mus`).value),
+        }));
+
+        const saveRes = await fetch('/api/teams', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(teams),
+        });
+
+        if (saveRes.ok) {
+          document.getElementById('msg').innerText = '✅ 保存しました！';
+        }
+      });
+
+      loadTeams();
+    </script>
+  </body>
+</html>

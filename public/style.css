@@ -1,0 +1,128 @@
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #f8f8f8;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #ff6600;
+  margin-bottom: 20px;
+  text-shadow: 1px 1px 2px #aaa;
+}
+
+.ranking {
+  max-width: 700px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.rank-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.rank-left {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+}
+
+.rank-num {
+  font-size: 24px;
+  font-weight: bold;
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  text-align: center;
+  color: #fff;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.rank-1 {
+  background: #ff3333;
+}
+.rank-2 {
+  background: #3399ff;
+}
+.rank-3 {
+  background: #ffcc00;
+}
+.rank-4 {
+  background: #33cc66;
+}
+
+.team-name {
+  flex: 1;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.score {
+  font-size: 20px;
+  font-weight: bold;
+  color: #444;
+}
+
+.form-item {
+  max-width: 500px;
+  margin: 0 auto 10px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+input[type='number'] {
+  width: 80px;
+  margin: 5px;
+}
+
+/* 矢印 */
+.move-arrow {
+  display: inline-block;
+  font-size: 18px;
+  margin-left: 6px;
+  opacity: 0.95;
+  transform-origin: center;
+  transition: transform 250ms ease, color 250ms ease;
+}
+
+.move-arrow.up {
+  color: #009900;
+}
+
+.move-arrow.down {
+  color: #cc0000;
+}
+
+.move-arrow.same {
+  color: #888;
+}
+
+/* アニメーション */
+.move-arrow.bump {
+  animation: bump 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes bump {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    transform: translateY(-8px) scale(1.15);
+  }
+  60% {
+    transform: translateY(2px) scale(0.98);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
