@@ -72,10 +72,7 @@
           );
 
           const color = colorMap[top.name] || '#999';
-          const maxDisp =
-            typeof maxObj[ev.key] === 'number' && maxObj[ev.key] > 0
-              ? ` / 最大 ${maxObj[ev.key]}${ev.unit}`
-              : '';
+          const maxDisp = ''; // 最大値表示を空に
 
           const section = `
             <div class="event-title">${ev.label}</div>

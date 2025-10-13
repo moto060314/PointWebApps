@@ -23,28 +23,6 @@
     <div class="section-title">チーム別スコア</div>
     <form id="scoreForm" class="team-grid"></form>
 
-    <div class="section-title">種目の最大値（上限）</div>
-    <div class="form-item" id="maxForm">
-      <div class="inline">
-        握力（kg）：<input type="number" id="max-grip" value="0" />
-      </div>
-      <div class="inline">
-        上体起こし（30秒）：<input type="number" id="max-situp30" value="0" />
-      </div>
-      <div class="inline">
-        空気椅子（秒）：<input type="number" id="max-wallSit" value="0" />
-      </div>
-      <div class="inline">
-        腕立て伏せ（1分）：<input type="number" id="max-pushup60" value="0" />
-      </div>
-      <div class="inline">
-        背筋測定（kg）：<input type="number" id="max-backExt" value="0" />
-      </div>
-      <div class="inline">
-        ヨガポーズ（60秒）：<input type="number" id="max-yoga60" value="0" />
-      </div>
-    </div>
-
     <div class="section-title">コスプレ投票数</div>
     <form id="cosplayForm"></form>
 
@@ -259,20 +237,6 @@
         });
       }
 
-      async function loadMax() {
-        const res = await fetch('/api/muscle-max');
-        if (!res.ok) return;
-        const max = await res.json();
-        document.getElementById('max-grip').value = Number(max.grip ?? 0);
-        document.getElementById('max-situp30').value = Number(max.situp30 ?? 0);
-        document.getElementById('max-wallSit').value = Number(max.wallSit ?? 0);
-        document.getElementById('max-pushup60').value = Number(
-          max.pushup60 ?? 0
-        );
-        document.getElementById('max-backExt').value = Number(max.backExt ?? 0);
-        document.getElementById('max-yoga60').value = Number(max.yoga60 ?? 0);
-      }
-
       async function loadCosplayVotes() {
         const res = await fetch('/api/cosplay');
         const votes = await res.json();
@@ -315,15 +279,6 @@
           };
         });
 
-        const max = {
-          grip: Number(document.getElementById('max-grip').value),
-          situp30: Number(document.getElementById('max-situp30').value),
-          wallSit: Number(document.getElementById('max-wallSit').value),
-          pushup60: Number(document.getElementById('max-pushup60').value),
-          backExt: Number(document.getElementById('max-backExt').value),
-          yoga60: Number(document.getElementById('max-yoga60').value),
-        };
-
         // コスプレ投票数保存
         const cosplayForm = document.getElementById('cosplayForm');
         const cosplayers = [];
@@ -347,13 +302,7 @@
           body: JSON.stringify(teams),
         });
 
-        const saveMax = await fetch('/api/muscle-max', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(max),
-        });
-
-        if (saveTeams.ok && saveMax.ok) {
+        if (saveTeams.ok) {
           document.getElementById('msg').innerText = '✅ 保存しました！';
         }
       }
@@ -372,7 +321,6 @@
 
       (async () => {
         await loadTeams();
-        await loadMax();
         await loadCosplayVotes();
       })();
     </script>
