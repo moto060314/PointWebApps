@@ -126,3 +126,63 @@ input[type='number'] {
     transform: translateY(0) scale(1);
   }
 }
+
+/* ===== 入力フォーム: チームカード横並び＆カラー枠 ===== */
+#scoreForm.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  max-width: 1200px;
+  margin: 0 auto 16px;
+}
+
+.team-card {
+  /* .form-item の上書き（グリッド内で中央寄せしない） */
+  max-width: initial;
+  margin: 0;
+  border: 3px solid transparent;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fff;
+}
+
+.team-card h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+/* チームカラー（枠線） */
+.team-RED {
+  border-color: #ff3333;
+}
+.team-BLUE {
+  border-color: #3399ff;
+}
+.team-YELLOW {
+  border-color: #ffcc00;
+}
+.team-GREEN {
+  border-color: #33cc66;
+}
+
+/* 薄い背景色で視認性アップ（必要に応じて） */
+.team-RED {
+  background: linear-gradient(180deg, rgba(255, 51, 51, 0.06), transparent 40%);
+}
+.team-BLUE {
+  background: linear-gradient(
+    180deg,
+    rgba(51, 153, 255, 0.06),
+    transparent 40%
+  );
+}
+.team-YELLOW {
+  background: linear-gradient(180deg, rgba(255, 204, 0, 0.08), transparent 40%);
+}
+.team-GREEN {
+  background: linear-gradient(
+    180deg,
+    rgba(51, 204, 102, 0.06),
+    transparent 40%
+  );
+}

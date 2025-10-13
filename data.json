@@ -2,21 +2,65 @@
   {
     "name": "RED",
     "cosplay": 0,
-    "muscle": 0
+    "muscle": 1,
+    "events": {
+      "grip": 30,
+      "situp30": 0,
+      "wallSit": 0,
+      "pushup60": 0,
+      "backExt": 0,
+      "yoga60": 0,
+      "yogaPose": 0,
+      "gripBroken": false,
+      "backExtBroken": false
+    }
   },
   {
     "name": "BLUE",
     "cosplay": 0,
-    "muscle": 0
+    "muscle": 3,
+    "events": {
+      "grip": 60,
+      "situp30": 0,
+      "wallSit": 0,
+      "pushup60": 0,
+      "backExt": 0,
+      "yoga60": 0,
+      "yogaPose": 0,
+      "gripBroken": false,
+      "backExtBroken": false
+    }
   },
   {
     "name": "YELLOW",
     "cosplay": 0,
-    "muscle": 0
+    "muscle": 10,
+    "events": {
+      "grip": 81,
+      "situp30": 0,
+      "wallSit": 0,
+      "pushup60": 0,
+      "backExt": 0,
+      "yoga60": 0,
+      "yogaPose": 0,
+      "gripBroken": false,
+      "backExtBroken": false
+    }
   },
   {
     "name": "GREEN",
     "cosplay": 0,
-    "muscle": 0
+    "muscle": 0,
+    "events": {
+      "grip": 0,
+      "situp30": 0,
+      "wallSit": 0,
+      "pushup60": 0,
+      "backExt": 0,
+      "yoga60": 0,
+      "yogaPose": 0,
+      "gripBroken": false,
+      "backExtBroken": false
+    }
   }
 ]

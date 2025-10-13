@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>筋肉バスターズ 1位速報</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .event-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        margin: 8px 20px 0;
+      }
+      .unit {
+        font-size: 14px;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>筋肉バスターズ 種目別 1位速報</h1>
+    <div id="events" class="ranking"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const EVENTS = [
+        { key: 'grip', label: '握力', unit: 'kg' },
+        { key: 'situp30', label: '上体起こし（30秒）', unit: '回' },
+        { key: 'wallSit', label: '空気椅子', unit: '秒' },
+        { key: 'pushup60', label: '腕立て伏せ（1分）', unit: '回' },
+        { key: 'backExt', label: '背筋測定', unit: 'kg' },
+        { key: 'yoga60', label: 'ヨガポーズ（60秒）', unit: '秒' },
+      ];
+
+      const colorMap = {
+        RED: '#ff3333',
+        BLUE: '#3399ff',
+        YELLOW: '#ffcc00',
+        GREEN: '#33cc66',
+      };
+
+      let maxConfig = {};
+
+      const socket = io();
+      socket.on('teamsUpdated', (teams) => {
+        render(teams, maxConfig);
+      });
+
+      async function fetchTeams() {
+        const res = await fetch('/api/teams');
+        return await res.json();
+      }
+
+      async function fetchMax() {
+        const res = await fetch('/api/muscle-max');
+        if (!res.ok) return {};
+        return await res.json();
+      }
+
+      function render(teams, maxObj) {
+        const root = document.getElementById('events');
+        root.innerHTML = '';
+
+        EVENTS.forEach((ev) => {
+          const top = (teams || []).reduce(
+            (acc, t) => {
+              const val = t.events?.[ev.key] ?? 0;
+              if (val > acc.val) return { name: t.name, val };
+              return acc;
+            },
+            { name: '-', val: -Infinity }
+          );
+
+          const color = colorMap[top.name] || '#999';
+          const maxDisp =
+            typeof maxObj[ev.key] === 'number' && maxObj[ev.key] > 0
+              ? ` / 最大 ${maxObj[ev.key]}${ev.unit}`
+              : '';
+
+          const section = `
+            <div class="event-title">${ev.label}</div>
+            <div class="rank-item">
+              <div class="rank-left">
+                <div class="rank-num" style="background:${color};">1</div>
+              </div>
+              <div class="team-name">${top.name}</div>
+              <div class="score">${top.val === -Infinity ? '-' : top.val}${
+            ev.unit
+          }${maxDisp}</div>
+            </div>
+          `;
+          root.insertAdjacentHTML('beforeend', section);
+        });
+      }
+
+      async function init() {
+        maxConfig = await fetchMax();
+        const teams = await fetchTeams();
+        render(teams, maxConfig);
+      }
+
+      init();
+    </script>
+  </body>
+</html>

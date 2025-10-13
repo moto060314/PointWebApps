@@ -1,0 +1,22 @@
+[
+  {
+    "name": "コスプレイヤーA",
+    "votes": 150,
+    "team": "RED"
+  },
+  {
+    "name": "コスプレイヤーB",
+    "votes": 200,
+    "team": "BLUE"
+  },
+  {
+    "name": "コスプレイヤーC",
+    "votes": 100,
+    "team": "YELLOW"
+  },
+  {
+    "name": "コスプレイヤーD",
+    "votes": 0,
+    "team": "GREEN"
+  }
+]

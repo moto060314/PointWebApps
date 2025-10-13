@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>コスプレ投票ランキング</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>コスプレ投票ランキング</h1>
+    <div id="cosplay-ranking" class="ranking"></div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+
+      async function fetchCosplayVotes() {
+        const res = await fetch('/api/cosplay');
+        return await res.json();
+      }
+
+      function renderRanking(votes) {
+        const colorMap = {
+          RED: '#ff3333',
+          BLUE: '#3399ff',
+          YELLOW: '#ffcc00',
+          GREEN: '#33cc66',
+        };
+        const sorted = [...votes].sort((a, b) => b.votes - a.votes);
+
+        // 順位計算（同点は同順位: 1,1,3...）
+        let prevVotes = null;
+        let prevRank = 0;
+        const ranks = [];
+        sorted.forEach((v, i) => {
+          if (prevVotes !== null && v.votes === prevVotes) {
+            ranks[i] = prevRank;
+          } else {
+            ranks[i] = i + 1;
+            prevVotes = v.votes;
+            prevRank = ranks[i];
+          }
+        });
+
+        const top3 = sorted.slice(0, 3);
+        const root = document.getElementById('cosplay-ranking');
+        root.innerHTML = top3
+          .map(
+            (v, i) => `
+              <div class="rank-item">
+                <div class="rank-left">
+                  <div class="rank-num" style="background:${
+                    colorMap[v.team] || '#999'
+                  };">${ranks[i]}</div>
+                </div>
+                <div class="team-name">${
+                  v.name
+                } <span style="font-size:14px;color:#888;">(${
+              v.team ?? '-'
+            })</span></div>
+                <div class="score">${v.votes}票</div>
+              </div>
+            `
+          )
+          .join('');
+      }
+
+      async function updateRanking() {
+        const votes = await fetchCosplayVotes();
+        renderRanking(votes);
+      }
+
+      // 初回表示
+      updateRanking();
+
+      // サーバーからのリアルタイム通知
+      socket.on('cosplayUpdated', () => {
+        updateRanking();
+      });
+    </script>
+  </body>
+</html>
