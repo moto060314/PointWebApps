@@ -13,11 +13,11 @@ h1 {
 }
 
 .ranking {
-  max-width: 700px;
+  max-width: 300px;
   margin: 0 auto;
   background: #fff;
   border-radius: 16px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
 }
 
 .rank-item {
@@ -107,6 +107,17 @@ input[type='number'] {
   color: #888;
 }
 
+.move-arrow.new {
+  color: #ff6600;
+  font-weight: bold;
+  font-size: 12px;
+  padding: 2px 4px;
+  border: 1px solid #ff6600;
+  border-radius: 4px;
+  line-height: 1;
+  transform: none;
+}
+
 /* アニメーション */
 .move-arrow.bump {
   animation: bump 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -170,19 +181,410 @@ input[type='number'] {
   background: linear-gradient(180deg, rgba(255, 51, 51, 0.06), transparent 40%);
 }
 .team-BLUE {
-  background: linear-gradient(
-    180deg,
-    rgba(51, 153, 255, 0.06),
-    transparent 40%
-  );
+  background: linear-gradient(180deg, rgba(51, 153, 255, 0.06), transparent 40%);
 }
 .team-YELLOW {
   background: linear-gradient(180deg, rgba(255, 204, 0, 0.08), transparent 40%);
 }
 .team-GREEN {
-  background: linear-gradient(
-    180deg,
-    rgba(51, 204, 102, 0.06),
-    transparent 40%
-  );
+  background: linear-gradient(180deg, rgba(51, 204, 102, 0.06), transparent 40%);
+}
+
+/* --- team-pill: チームカラー --- */
+.team-pill.RED span {
+  background: #ff3333;
+  color: #fff;
+  border-color: #ff3333;
+}
+.team-pill.BLUE span {
+  background: #3399ff;
+  color: #fff;
+  border-color: #3399ff;
+}
+.team-pill.YELLOW span {
+  background: #ffcc00;
+  color: #fff;
+  border-color: #ffcc00;
+}
+.team-pill.GREEN span {
+  background: #33cc66;
+  color: #fff;
+  border-color: #33cc66;
+}
+
+/* --- team-pill: 選択時もチームカラー --- */
+.team-pill input:checked + span {
+  /* 既存の色指定を消す */
+  background: inherit;
+  border-color: inherit;
+  color: inherit;
+}
+
+/* 各チームカラーで選択時の色を指定 */
+.team-pill.RED input:checked + span {
+  background: #ff3333;
+  border-color: #ff3333;
+  color: #fff;
+}
+.team-pill.BLUE input:checked + span {
+  background: #3399ff;
+  border-color: #3399ff;
+  color: #fff;
+}
+.team-pill.YELLOW input:checked + span {
+  background: #ffcc00;
+  border-color: #ffcc00;
+  color: #fff;
+}
+.team-pill.GREEN input:checked + span {
+  background: #33cc66;
+  border-color: #33cc66;
+  color: #fff;
+}
+
+/* 既存のオレンジ指定を削除または上書き */
+.team-pill input:checked + span {
+  /* background: #222; ←この行は不要です */
+  /* color: #fff;      ←この行は不要です */
+  /* border-color: #222; ←この行は不要です */
+}
+
+/* ===== 種目別ランキング レイアウト統一 ===== */
+.event-ranking-card .rank-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+}
+.event-ranking-card .rank-left {
+  width: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+.event-ranking-card .rank-num {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  font-size: 20px;
+  margin-right: 0;
+}
+.event-ranking-card .team-name {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  word-break: break-all;
+}
+.event-ranking-card .team-name span.dim {
+  color: #888;
+  font-weight: normal;
+}
+.event-ranking-card .score {
+  width: 140px;
+  text-align: right;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 記録なし表示センタリング */
+.event-ranking-card .rank-item.empty {
+  justify-content: center;
+  color: #888;
+  font-size: 14px;
+  font-weight: normal;
+}
+
+/* --- 追加: チームランキング 新デザイン --- */
+.team-ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+.team-ranking-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: #fff;
+  border: 3px solid #ccc;
+  border-radius: 1rem;
+  box-sizing: border-box;
+}
+.team-ranking-row .arrow {
+  width: 34px;
+  text-align: center;
+  font-size: 20px;
+  flex: 0 0 34px;
+}
+.team-ranking-row .team-name {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.team-ranking-row .total {
+  margin-left: auto;
+  font-size: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .team-ranking-row {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+  .team-ranking-row .team-name {
+    font-size: 16px;
+  }
+  .team-ranking-row .total {
+    font-size: 16px;
+  }
+}
+
+/* === スマホ最適化追加 === */
+.mobile-event-form {
+  border: 2px solid #ddd;
+  background: #fff;
+  border-radius: 16px;
+  padding: 0;
+  overflow: hidden;
+  margin: 0 0 18px;
+}
+.mobile-event-form .event-title {
+  all: unset;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  /* 左18pxのまま / 右を24pxに拡張（好みで調整: 22〜28px など） */
+  padding: 14px 24px 14px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #fafafa;
+  border-bottom: 1px solid #eee;
+  box-sizing: border-box;
+}
+.mobile-event-form .event-title:active {
+  background: #f0f0f0;
+}
+.mobile-event-form .event-title .caret {
+  transition: transform 0.25s;
+}
+.mobile-event-form.open .event-title .caret {
+  transform: rotate(180deg);
+}
+
+.mobile-event-form .event-body {
+  display: none;
+  padding: 12px 16px 16px;
+}
+.mobile-event-form.open .event-body {
+  display: block;
+}
+
+.mobile-event-form .form-row {
+  margin-bottom: 14px;
+}
+.mobile-event-form .form-row:last-child {
+  margin-bottom: 4px;
+}
+
+.team-row .team-select-wrap {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+.team-pill {
+  position: relative;
+  flex: 0 0 auto;
+}
+.team-pill input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.team-pill span {
+  display: inline-block;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2px solid #ccc;
+  border-radius: 999px;
+  background: #fff;
+  min-width: 64px;
+  text-align: center;
+  user-select: none;
+  transition: background 0.25s, border-color 0.25s, color 0.25s;
+}
+.team-pill input:checked + span {
+  background: #222;
+  color: #fff;
+  border-color: #222;
+}
+.team-pill:active span {
+  transform: scale(0.94);
+}
+
+.field-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.field-label {
+  font-size: 12px;
+  color: #666;
+  letter-spacing: 0.5px;
+}
+.two-col {
+  display: flex;
+  gap: 12px;
+}
+@media (max-width: 600px) {
+  .two-col {
+    flex-direction: column;
+  }
+}
+
+.number-box {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.number-box input {
+  border: 0;
+  width: 80px;
+  font-size: 18px;
+  padding: 6px 4px;
+  outline: none;
+  background: #fff;
+}
+.step-btn {
+  background: #f5f5f5;
+  border: 0;
+  width: 46px;
+  font-size: 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.step-btn:active {
+  background: #e0e0e0;
+}
+.step-btn:focus {
+  outline: 2px solid #888;
+}
+
+.flag-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.yoga-select select {
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.point-row {
+  font-size: 14px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.actions .save-btn {
+  width: 100%;
+  padding: 14px 0;
+  font-size: 16px;
+  font-weight: 600;
+  background: #1100ff;
+  color: #fff;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+.actions .save-btn:active {
+  filter: brightness(0.9);
+}
+
+.mobile-event-form input,
+.mobile-event-form select {
+  font-size: 16px;
+}
+
+@media (hover: hover) {
+  .actions .save-btn:hover {
+    filter: brightness(1.05);
+  }
+}
+
+/* 視認性向上: スクロールバー隠し(横スクロール pills) */
+.team-select-wrap::-webkit-scrollbar {
+  height: 6px;
+}
+.team-select-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+.team-select-wrap::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+/* 端末がダークモードのとき軽く調整 */
+@media (prefers-color-scheme: dark) {
+  .mobile-event-form {
+    background: #222;
+    border-color: #444;
+  }
+  .mobile-event-form .event-title {
+    background: #2c2c2c;
+    color: #eee;
+  }
+  .team-pill span {
+    background: #2a2a2a;
+    border-color: #555;
+    color: #ddd;
+  }
+  .team-pill input:checked + span {
+    background: #ff6600;
+    border-color: #ff6600;
+    color: #fff;
+  }
+  .number-box {
+    border-color: #555;
+  }
+  .number-box input {
+    background: #1f1f1f;
+    color: #fff;
+  }
+  .step-btn {
+    background: #333;
+    color: #fff;
+  }
+  .step-btn:active {
+    background: #444;
+  }
+  .actions .save-btn {
+    box-shadow: none;
+  }
 }

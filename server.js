@@ -17,6 +17,8 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 const MUSCLE_MAX_FILE = path.join(__dirname, 'muscle.json');
 // 追加: コスプレ投票ファイル
 const COSPLAY_FILE = path.join(__dirname, 'cosplay.json');
+// 追加: イベントスコアファイル
+const EVENT_SCORE_FILE = path.join(__dirname, 'event_scores.json');
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
@@ -66,8 +68,7 @@ app.get('/api/muscle-max', (req, res) => {
 app.post('/api/muscle-max', (req, res) => {
   const max = req.body || {};
   fs.writeFile(MUSCLE_MAX_FILE, JSON.stringify(max, null, 2), (err) => {
-    if (err)
-      return res.status(500).json({ error: 'Failed to save muscle max' });
+    if (err) return res.status(500).json({ error: 'Failed to save muscle max' });
     res.json({ success: true });
   });
 });
@@ -84,10 +85,84 @@ app.get('/api/cosplay', (req, res) => {
 app.post('/api/cosplay', (req, res) => {
   const votes = req.body;
   fs.writeFile(COSPLAY_FILE, JSON.stringify(votes, null, 2), (err) => {
-    if (err)
-      return res.status(500).json({ error: 'Failed to save cosplay votes' });
+    if (err) return res.status(500).json({ error: 'Failed to save cosplay votes' });
     io.emit('cosplayUpdated'); // 追加: クライアントへ通知
     res.json({ success: true });
+  });
+});
+
+app.get('/api/event-scores', (req, res) => {
+  fs.readFile(EVENT_SCORE_FILE, 'utf8', (err, data) => {
+    if (err) return res.json([]);
+    res.json(JSON.parse(data));
+  });
+});
+
+// 既存の保存APIでSocket.IO通知も追加
+app.post('/api/event-score', (req, res) => {
+  const body = req.body;
+  let scores = [];
+  fs.readFile(EVENT_SCORE_FILE, 'utf8', (err, data) => {
+    try {
+      if (!err && data) scores = JSON.parse(data);
+      if (!Array.isArray(scores)) scores = [];
+    } catch (e) {
+      scores = [];
+    }
+    if (Array.isArray(body)) {
+      // 配列なら全体上書き
+      scores = body;
+    } else {
+      // オブジェクトなら追加（重複チェック: event, team, classCode, name が一致するものは追加しない）
+      const exists = scores.some((e) => e.event === body.event && e.team === body.team && (e.classCode ?? null) === (body.classCode ?? null) && (e.name ?? null) === (body.name ?? null));
+      if (!exists) {
+        scores.push(body);
+      }
+    }
+    fs.writeFile(EVENT_SCORE_FILE, JSON.stringify(scores, null, 2), (err) => {
+      if (err) return res.status(500).json({ error: 'Failed to save event score' });
+      io.emit('eventScoreUpdated');
+      res.json({ success: true });
+    });
+  });
+});
+
+app.post('/api/update-teams-from-events', (req, res) => {
+  fs.readFile(EVENT_SCORE_FILE, 'utf8', (err, eventData) => {
+    if (err) return res.status(500).json({ error: 'Failed to read event scores' });
+    const events = JSON.parse(eventData);
+
+    // チームごとに合計点を集計
+    const teamMap = {};
+    events.forEach((e) => {
+      if (!teamMap[e.team]) {
+        teamMap[e.team] = { cosplay: 0, muscle: 0, events: {} };
+      }
+      // 種目ごとの最高点を加算（同じ生徒が複数回入力した場合は最新のみ反映したい場合は工夫が必要）
+      teamMap[e.team].muscle += e.point;
+      // 必要なら個別種目も記録
+      teamMap[e.team].events[e.event] = Math.max(teamMap[e.team].events[e.event] || 0, e.value);
+    });
+
+    // data.jsonのチーム構造に合わせて更新
+    fs.readFile(DATA_FILE, 'utf8', (err, teamData) => {
+      if (err) return res.status(500).json({ error: 'Failed to read team data' });
+      const teams = JSON.parse(teamData);
+      teams.forEach((team) => {
+        if (teamMap[team.name]) {
+          team.muscle = teamMap[team.name].muscle;
+          team.events = teamMap[team.name].events;
+        } else {
+          team.muscle = 0;
+          team.events = {};
+        }
+      });
+      fs.writeFile(DATA_FILE, JSON.stringify(teams, null, 2), (err) => {
+        if (err) return res.status(500).json({ error: 'Failed to save team data' });
+        io.emit('teamsUpdated', teams);
+        res.json({ success: true });
+      });
+    });
   });
 });
 
