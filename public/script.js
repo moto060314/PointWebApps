@@ -58,7 +58,7 @@ function renderRanking(teams) {
       img = 'images/down.png';
       alt = 'DOWN';
     } else {
-      img = 'images/default.png';
+      img = 'images/nochange.png';
       alt = 'SAME';
     }
     const teamClass = team ? `team-${team}` : '';
