@@ -15,8 +15,7 @@ h1 {
 .ranking {
   max-width: 300px;
   margin: 0 auto;
-  background: #fff;
-  border-radius: 16px;
+  background: #d400ff;
   padding: 1rem;
 }
 
@@ -116,6 +115,37 @@ input[type='number'] {
   border-radius: 4px;
   line-height: 1;
   transform: none;
+}
+
+.move-arrow.circle-bg {
+  border-radius: 50%;
+  padding: 4px 0;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  margin-left: 0;
+  margin-right: 6px;
+  background: #eee; /* デフォルト色（上書きされる） */
+  border: 2px solid transparent;
+}
+.move-arrow.circle-bg.RED {
+  background: #ff3333;
+  color: #fff;
+}
+.move-arrow.circle-bg.BLUE {
+  background: #3399ff;
+  color: #fff;
+}
+.move-arrow.circle-bg.YELLOW {
+  background: #ffcc00;
+  color: #fff;
+}
+.move-arrow.circle-bg.GREEN {
+  background: #33cc66;
+  color: #fff;
 }
 
 /* アニメーション */
@@ -242,11 +272,18 @@ input[type='number'] {
   color: #fff;
 }
 
-/* 既存のオレンジ指定を削除または上書き */
-.team-pill input:checked + span {
-  /* background: #222; ←この行は不要です */
-  /* color: #fff;      ←この行は不要です */
-  /* border-color: #222; ←この行は不要です */
+.ranking.event-ranking-card {
+  min-width: 200px;
+  max-width: 400px;
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 16px 18px;
 }
 
 /* ===== 種目別ランキング レイアウト統一 ===== */
@@ -319,9 +356,18 @@ input[type='number'] {
 }
 .team-ranking-row .arrow {
   width: 34px;
+  height: 34px;
   text-align: center;
   font-size: 20px;
   flex: 0 0 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eee;
+  border: 3px solid transparent;
+  box-sizing: border-box;
+  margin-right: 8px;
 }
 .team-ranking-row .team-name {
   font-size: 18px;
@@ -334,6 +380,25 @@ input[type='number'] {
   font-weight: 600;
   white-space: nowrap;
 }
+
+/* 各チームカラーで枠線を指定 */
+.team-ranking-row.team-RED .arrow {
+  border-color: #ff3333;
+  background: rgba(255, 51, 51, 0.08);
+}
+.team-ranking-row.team-BLUE .arrow {
+  border-color: #3399ff;
+  background: rgba(51, 153, 255, 0.08);
+}
+.team-ranking-row.team-YELLOW .arrow {
+  border-color: #ffcc00;
+  background: rgba(255, 204, 0, 0.1);
+}
+.team-ranking-row.team-GREEN .arrow {
+  border-color: #33cc66;
+  background: rgba(51, 204, 102, 0.08);
+}
+
 @media (max-width: 600px) {
   .team-ranking-row {
     padding: 12px 14px;
@@ -587,4 +652,171 @@ input[type='number'] {
   .actions .save-btn {
     box-shadow: none;
   }
+}
+
+.event-athlete-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #fff;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+.event-athlete-row .arrow {
+  width: 34px;
+  height: 25px;
+  text-align: center;
+  font-size: 20px;
+  flex: 0 0 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eee;
+  border: 3px solid transparent;
+  box-sizing: border-box;
+  margin-right: 8px;
+}
+.event-athlete-row.team-RED .arrow {
+  border-color: #ff3333;
+  background: rgba(255, 51, 51, 0.08);
+}
+.event-athlete-row.team-BLUE .arrow {
+  border-color: #3399ff;
+  background: rgba(51, 153, 255, 0.08);
+}
+.event-athlete-row.team-YELLOW .arrow {
+  border-color: #ffcc00;
+  background: rgba(255, 204, 0, 0.1);
+}
+.event-athlete-row.team-GREEN .arrow {
+  border-color: #33cc66;
+  background: rgba(51, 204, 102, 0.08);
+}
+
+/* input.htmlのフォーム用スタイルをここにコピー */
+.event-form {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin: 24px auto;
+  padding: 1rem;
+  max-width: 600px;
+  background: #f9f9f9;
+}
+.event-title {
+  font-weight: bold;
+  font-size: 18px;
+  margin-right: 10rem;
+}
+.form-row {
+  margin-bottom: 12px;
+}
+.team-radio {
+  margin-right: 16px;
+}
+.point-result {
+  font-weight: bold;
+  color: #007a3d;
+}
+
+/* 追加: 種目別 個人カード */
+#event-rankings {
+  display: grid;
+  gap: 24px;
+  /* 列幅を統一（必要に応じて幅調整） */
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  padding: 1rem;
+  background: #d400ff;
+}
+.ranking.event-ranking-card {
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 16px 18px;
+}
+.ranking.event-ranking-card > div:first-child {
+  margin: -12px -16px 4px;
+  padding: 12px 20px;
+  background: #fafafa;
+}
+/* 1人分の行 */
+.event-athlete-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  background: #fff;
+  position: relative;
+  font-size: 14px;
+  line-height: 1.2;
+  min-height: 52px;
+}
+.event-athlete-row + .event-athlete-row {
+  margin-top: 8px;
+}
+.event-athlete-row .arrow {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  flex: 0 0 24px;
+}
+.event-athlete-row .arrow .move-arrow.new {
+  font-size: 11px;
+  padding: 1px 4px;
+  line-height: 1;
+  display: inline-block;
+  width: auto;
+}
+.event-athlete-row .athlete-name {
+  font-weight: 600;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.event-athlete-row .athlete-name .class {
+  color: #666;
+  font-weight: 500;
+}
+.event-athlete-row .record {
+  margin-left: auto;
+  font-weight: 500;
+  font-size: 13px;
+  white-space: nowrap;
+}
+/* カラー枠（個別 inline で border-color を設定） */
+.event-athlete-row {
+  border: 3px solid #ccc;
+  border-radius: 1rem;
+}
+
+/* 矢印既存スタイル想定: 追加/微調整 */
+.move-arrow.up {
+  color: #d00;
+}
+.move-arrow.down {
+  color: #06c;
+}
+.move-arrow.same {
+  color: #888;
+}
+.move-arrow.new {
+  color: #ff6600;
+  font-weight: bold;
+  border: 1px solid #ff6600;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.team-ranking-row .arrow,
+.event-athlete-row .arrow {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }

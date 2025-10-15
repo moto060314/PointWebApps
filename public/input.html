@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>筋肉バスターズ 種目別入力フォーム</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>筋肉バスターズ 種目別入力フォーム</h1>
+    <div id="forms"></div>
+    <p id="msg" style="text-align: center; color: green"></p>
+
+    <!-- 履歴表示枠を追加 -->
+    <h2 style="margin-top: 32px">入力履歴・修正・削除</h2>
+    <div id="event-log"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js" defer></script>
+  </body>
+</html>

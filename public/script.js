@@ -1,0 +1,646 @@
+// Socket.IO クライアント接続（サーバーからの更新を受けて再描画）
+const socket = io();
+socket.on('teamsUpdated', (teams) => {
+  console.log('teamsUpdated received', teams);
+  renderRanking(teams);
+});
+
+async function fetchData() {
+  const res = await fetch('/api/teams');
+  const teams = await res.json();
+  renderRanking(teams);
+}
+
+function calcTotal(team) {
+  return team.cosplay + team.muscle;
+}
+
+function renderRanking(teams) {
+  const rankingDiv = document.getElementById('ranking');
+  // 全チームソート（合計ポイント降順）
+  const sorted = [...teams].sort((a, b) => calcTotal(b) - calcTotal(a));
+
+  const prevRanks = JSON.parse(localStorage.getItem('prevRanks') || '{}');
+  const newRanks = {};
+
+  // コンペ方式順位決定
+  let prevTotal = null;
+  let prevRank = 0;
+  sorted.forEach((team, i) => {
+    const total = calcTotal(team);
+    if (prevTotal !== null && total === prevTotal) {
+      newRanks[team.name] = prevRank;
+    } else {
+      const rank = i + 1;
+      newRanks[team.name] = rank;
+      prevRank = rank;
+      prevTotal = total;
+    }
+  });
+
+  // 表示: 4位以内 (同順位で4位が複数なら全て rank <=4)
+  const display = sorted.filter((t) => newRanks[t.name] <= 4);
+
+  // カラー定義
+  const colorMap = { RED: '#ff3333', BLUE: '#3399ff', YELLOW: '#ffcc00', GREEN: '#33cc66' };
+
+  // 共通矢印（未保存＝NEW）画像方式
+  function teamArrow(prevRank, curRank, team) {
+    let img = '';
+    let alt = '';
+    if (typeof prevRank !== 'number') {
+      img = 'images/new.png';
+      alt = 'NEW';
+    } else if (prevRank > curRank) {
+      img = 'images/up.png';
+      alt = 'UP';
+    } else if (prevRank < curRank) {
+      img = 'images/down.png';
+      alt = 'DOWN';
+    } else {
+      img = 'images/default.png';
+      alt = 'SAME';
+    }
+    const teamClass = team ? `team-${team}` : '';
+    return `<span class="arrow move-arrow ${teamClass}"><img src="${img}" alt="${alt}" style="width:24px;height:24px;display:block;margin:auto;" /></span>`;
+  }
+
+  rankingDiv.classList.add('team-ranking-list');
+  rankingDiv.innerHTML = display
+    .map((team) => {
+      const cur = newRanks[team.name];
+      const prev = prevRanks[team.name];
+      const arrow = teamArrow(prev, cur, team.name);
+      const color = colorMap[team.name] || '#666';
+      return `
+  <div class="team-ranking-row team-${team.name}" style="border-color:${color};">
+    <div class="arrow">${arrow}</div>
+    <div class="team-name">${team.name}</div>
+    <div class="total">${calcTotal(team)} pt</div>
+  </div>
+`;
+    })
+    .join('');
+
+  localStorage.setItem('prevRanks', JSON.stringify(newRanks));
+}
+
+// --- input.htmlのフォーム生成・採点・保存ロジック（下記を追加） ---
+// 6種目の定義
+const EVENTS = [
+  { key: 'grip', label: '握力（kg）', unit: 'kg', inputType: 'number' },
+  { key: 'situp30', label: '上体起こし（30秒）', unit: '回', inputType: 'number' },
+  { key: 'wallSit', label: '空気椅子', unit: '秒', inputType: 'number' },
+  { key: 'pushup60', label: '腕立て伏せ（1分）', unit: '回', inputType: 'number' },
+  { key: 'backExt', label: '背筋測定（kg）', unit: 'kg', inputType: 'number' },
+  { key: 'yoga60', label: 'ヨガポーズ（60秒）', unit: '秒', inputType: 'number' },
+];
+const TEAMS = ['RED', 'BLUE', 'YELLOW', 'GREEN'];
+
+// 採点関数（前回までのロジックを流用）
+function scoreGrip(val, broken) {
+  if (broken) return 100;
+  if (val >= 81) return 10;
+  if (val >= 56) return 3;
+  if (val >= 41) return 2;
+  if (val > 0) return 1;
+  return 0;
+}
+function scoreSitup30(val) {
+  if (val >= 51) return 10;
+  if (val >= 31) return 6;
+  if (val >= 21) return 2;
+  if (val > 0) return 1;
+  return 0;
+}
+function scoreWallSit(val) {
+  if (val >= 101) return 7;
+  if (val >= 71) return 3;
+  if (val >= 46) return 2;
+  if (val > 0) return 1;
+  return 0;
+}
+function scorePushup60(val) {
+  if (val >= 85) return 20;
+  if (val >= 51) return 3;
+  if (val >= 36) return 2;
+  if (val > 0) return 1;
+  return 0;
+}
+function scoreBackExt(val, broken) {
+  if (broken) return 100;
+  if (val >= 196) return 10;
+  if (val >= 166) return 5;
+  if (val >= 140) return 3;
+  if (val > 0) return 1;
+  return 0;
+}
+function scoreYoga(seconds, yogaPose) {
+  const sec = Number(seconds);
+  const pose = Number(yogaPose);
+  const base = sec > 0 || pose > 0 ? 5 : 0;
+  if (sec < 60) return base;
+  switch (pose) {
+    case 1:
+    case 2:
+      return base + 5;
+    case 3:
+      return 500;
+    case 4:
+      return 100;
+    default:
+      return base;
+  }
+}
+
+// 各種目ごとの採点関数
+function calcPoint(eventKey, value, extra) {
+  switch (eventKey) {
+    case 'grip':
+      return scoreGrip(value, extra?.broken);
+    case 'situp30':
+      return scoreSitup30(value);
+    case 'wallSit':
+      return scoreWallSit(value);
+    case 'pushup60':
+      return scorePushup60(value);
+    case 'backExt':
+      return scoreBackExt(value, extra?.broken);
+    case 'yoga60':
+      return scoreYoga(value, extra?.yogaPose);
+    default:
+      return 0;
+  }
+}
+
+// 入力フォーム生成
+function renderForms() {
+  const root = document.getElementById('forms');
+  root.innerHTML = EVENTS.map(
+    (ev, idx) => `
+          <form class="event-form mobile-event-form ${idx === 0 ? 'open' : ''}" id="form-${ev.key}" autocomplete="off" data-event="${ev.key}">
+            <button type="button" class="event-title toggle-btn" aria-expanded="${idx === 0 ? 'true' : 'false'}">
+              <span>${ev.label}</span>
+              <span class="caret" aria-hidden="true">⌄</span>
+            </button>
+            <div class="event-body">
+              <div class="form-row team-row">
+                <div class="team-label">チーム</div>
+                <div class="team-select-wrap">
+                  ${TEAMS.map(
+                    (t) => `
+                    <label class="team-pill">
+                      <input type="radio" name="team-${ev.key}" value="${t}" required>
+                      <span>${t}</span>
+                    </label>`
+                  ).join('')}
+                </div>
+              </div>
+              <div class="form-row two-col">
+                <label class="field-block">
+                  <span class="field-label">クラス</span>
+                  <input type="text" name="class-${ev.key}" maxlength="8" inputmode="text" />
+                </label>
+                <label class="field-block">
+                  <span class="field-label">名前</span>
+                  <input type="text" name="name-${ev.key}" maxlength="16" inputmode="text" />
+                </label>
+              </div>
+              <div class="form-row value-row">
+                <label class="field-block grow">
+                  <span class="field-label">${ev.label}記録</span>
+                  <div class="number-box">
+                    <button type="button" class="step-btn dec" data-step="-1">−</button>
+                    <input 
+                       type="${ev.inputType}" 
+                       name="value-${ev.key}" 
+                       inputmode="decimal" 
+                       pattern="[0-9]*" 
+                       style="text-align:center;" required />
+                    <button type="button" class="step-btn inc" data-step="+1">＋</button>
+                  </div>
+                  <span class="unit">${ev.unit}</span>
+                </label>
+                ${
+                  ev.key === 'grip' || ev.key === 'backExt'
+                    ? `<label class="flag-check">
+                        <input type="checkbox" name="broken-${ev.key}"> <span>計測器壊した</span>
+                      </label>`
+                    : ''
+                }
+                ${
+                  ev.key === 'yoga60'
+                    ? `<div class="yoga-select">
+                        <label class="field-block">
+                          <span class="field-label">ヨガポーズ</span>
+                          <select name="yogaPose-${ev.key}">
+                            <option value="0">選択なし</option>
+                            <option value="1">ポーズ1 (+5)</option>
+                            <option value="2">ポーズ2 (+5)</option>
+                            <option value="3">ポーズ3 (+500)</option>
+                            <option value="4">ポーズ4 (+100)</option>
+                          </select>
+                        </label>
+                      </div>`
+                    : ''
+                }
+              </div>
+              <div class="form-row point-row">
+                <span class="point-result" id="point-${ev.key}">ポイント: 0</span>
+              </div>
+              <div class="form-row actions">
+                <button type="submit" class="save-btn">保存</button>
+              </div>
+            </div>
+          </form>
+        `
+  ).join('');
+  // イベント処理付与
+  EVENTS.forEach((ev) => setupForm(ev.key));
+  setupAccordions();
+  restoreLastInputs();
+  setupStepButtons();
+}
+
+// 入力値変更時にポイント自動計算
+function setupForm(eventKey) {
+  const form = document.getElementById(`form-${eventKey}`);
+  const pointSpan = document.getElementById(`point-${eventKey}`);
+  // 追加: チーム選択でテーマ変更
+  form.addEventListener('change', (ev) => {
+    if (ev.target.name === `team-${eventKey}`) {
+      form.dataset.team = ev.target.value;
+    }
+  });
+  form.addEventListener('input', () => {
+    const value = Number(form[`value-${eventKey}`].value);
+    let extra = {};
+    if (eventKey === 'grip' || eventKey === 'backExt') {
+      extra.broken = form[`broken-${eventKey}`].checked;
+    }
+    if (eventKey === 'yoga60') {
+      extra.yogaPose = Number(form[`yogaPose-${eventKey}`].value);
+    }
+    const pt = calcPoint(eventKey, value, extra);
+    pointSpan.textContent = `ポイント: ${pt}`;
+  });
+  // 保存処理
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const team = form[`team-${eventKey}`].value;
+    // 空欄ならnull
+    const classCodeRaw = form[`class-${eventKey}`].value;
+    const nameRaw = form[`name-${eventKey}`].value;
+    const classCode = classCodeRaw === '' ? null : classCodeRaw;
+    const name = nameRaw === '' ? null : nameRaw;
+    const value = Number(form[`value-${eventKey}`].value);
+    let extra = {};
+    if (eventKey === 'grip' || eventKey === 'backExt') {
+      extra.broken = form[`broken-${eventKey}`].checked;
+    }
+    if (eventKey === 'yoga60') {
+      extra.yogaPose = Number(form[`yogaPose-${eventKey}`].value);
+    }
+    const pt = calcPoint(eventKey, value, extra);
+
+    const data = {
+      event: eventKey,
+      team,
+      classCode,
+      name,
+      value,
+      ...extra,
+      point: pt,
+      timestamp: Date.now(),
+    };
+
+    // 履歴の重複判定も空欄・nullを同一視
+    let logs = window._eventLogs || [];
+    const idx = logs.findIndex((e) => e.event === data.event && e.team === data.team && (e.classCode ?? null) === (data.classCode ?? null) && (e.name ?? null) === (data.name ?? null));
+    if (idx >= 0) {
+      logs[idx] = data;
+    } else {
+      logs.push(data);
+    }
+    await fetch('/api/event-score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(logs),
+    });
+    await fetch('/api/update-teams-from-events', { method: 'POST' });
+
+    pointSpan.textContent = `ポイント: ${pt}（保存しました）`;
+    // ↑ここは削除。サーバーの eventScoreUpdated を待つ
+    persistLastInputs(eventKey, form);
+  });
+}
+
+function setupAccordions() {
+  document.querySelectorAll('.mobile-event-form .toggle-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const form = btn.closest('.mobile-event-form');
+      const open = form.classList.contains('open');
+      // 一旦全閉
+      document.querySelectorAll('.mobile-event-form.open').forEach((f) => {
+        f.classList.remove('open');
+        f.querySelector('.toggle-btn').setAttribute('aria-expanded', 'false');
+      });
+      if (!open) {
+        form.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+        // スクロール
+        setTimeout(() => {
+          form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 50);
+      }
+    });
+  });
+}
+
+function setupStepButtons() {
+  document.querySelectorAll('.number-box .step-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const input = btn.parentElement.querySelector('input');
+      let v = Number(input.value || 0);
+      const step = parseInt(btn.dataset.step, 10);
+      v += step;
+      if (v < 0) v = 0;
+      input.value = v;
+      input.dispatchEvent(new Event('input'));
+    });
+  });
+}
+
+function persistLastInputs(eventKey, form) {
+  const data = JSON.parse(localStorage.getItem('lastInputs') || '{}');
+  data[eventKey] = {
+    team: form.querySelector(`input[name="team-${eventKey}"]:checked`)?.value || null,
+    classCode: form[`class-${eventKey}`].value || '',
+    name: form[`name-${eventKey}`].value || '',
+  };
+  localStorage.setItem('lastInputs', JSON.stringify(data));
+}
+
+function restoreLastInputs() {
+  const data = JSON.parse(localStorage.getItem('lastInputs') || '{}');
+  EVENTS.forEach((ev) => {
+    const f = document.getElementById(`form-${ev.key}`);
+    if (!f) return;
+    const saved = data[ev.key];
+    if (!saved) return;
+    if (saved.team) {
+      const r = f.querySelector(`input[name="team-${ev.key}"][value="${saved.team}"]`);
+      if (r) {
+        r.checked = true;
+        f.dataset.team = saved.team; // 追加: 復元時にテーマ適用
+      }
+    }
+    if (saved.classCode) f[`class-${ev.key}`].value = saved.classCode;
+    if (saved.name) f[`name-${ev.key}`].value = saved.name;
+  });
+}
+
+// 履歴表示・編集・削除
+async function fetchEventScores() {
+  const res = await fetch('/api/event-scores'); // ←ここを修正
+  if (!res.ok) return [];
+  return await res.json();
+}
+
+function renderEventLog(logs) {
+  const root = document.getElementById('event-log');
+  if (!logs.length) {
+    root.innerHTML = '<div style="color:#888;text-align:center;">履歴はありません</div>';
+    return;
+  }
+  root.innerHTML = logs
+    .map(
+      (e, i) => `
+            <div class="form-item" style="display:flex;align-items:center;gap:12px;">
+              <div style="flex:1;">
+                <span style="font-weight:bold;color:#007a3d;">${e.name}</span>
+                <span style="color:#888;">(${e.classCode})</span>
+                <span style="color:#555;">[${e.team}]</span>
+                <span style="color:#444;">${EVENTS.find((ev) => ev.key === e.event)?.label ?? e.event}：${e.value}</span>
+                <span style="color:#888;">${new Date(e.timestamp).toLocaleString()}</span>
+                <span style="color:#d00;font-weight:bold;">${e.point}pt</span>
+              </div>
+              <button onclick="editEventScore(${i})">修正</button>
+              <button onclick="deleteEventScore(${i})">削除</button>
+            </div>
+          `
+    )
+    .join('');
+}
+
+// 履歴取得＆表示
+async function updateEventLog() {
+  const logs = await fetchEventScores();
+  window._eventLogs = logs;
+  // 履歴表示は input.html のみ
+  if (document.getElementById('event-log')) {
+    renderEventLog(logs);
+  }
+  renderEventRankings(logs); // ←追加
+}
+
+// 削除処理
+async function deleteEventScore(idx) {
+  if (!confirm('この記録を削除しますか？')) return;
+  const logs = window._eventLogs || [];
+  logs.splice(idx, 1);
+  await fetch('/api/event-score', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(logs),
+  });
+  await fetch('/api/update-teams-from-events', { method: 'POST' });
+  // 削除も socket イベントで再描画
+}
+
+// 修正処理
+function editEventScore(idx) {
+  const logs = window._eventLogs || [];
+  const e = logs[idx];
+  // フォームに値をセット
+  const form = document.getElementById(`form-${e.event}`);
+  if (!form) return;
+  form[`team-${e.event}`].value = e.team;
+  form[`class-${e.event}`].value = e.classCode;
+  form[`name-${e.event}`].value = e.name;
+  form[`value-${e.event}`].value = e.value;
+  if (e.event === 'grip' || e.event === 'backExt') {
+    form[`broken-${e.event}`].checked = !!e.broken;
+  }
+  if (e.event === 'yoga60') {
+    form[`yogaPose-${e.event}`].value = e.yogaPose ?? 0;
+  }
+  // 編集時は保存ボタンを「上書き保存」に変更
+  form.querySelector('button[type="submit"]').textContent = '上書き保存';
+  // 上書き保存時の処理
+  form.onsubmit = async function (ev) {
+    ev.preventDefault();
+    const team = form[`team-${e.event}`].value;
+    const classCodeRaw = form[`class-${e.event}`].value;
+    const nameRaw = form[`name-${e.event}`].value;
+    const classCode = classCodeRaw === '' ? null : classCodeRaw;
+    const name = nameRaw === '' ? null : nameRaw;
+    const value = Number(form[`value-${e.event}`].value);
+    let extra = {};
+    if (e.event === 'grip' || e.event === 'backExt') {
+      extra.broken = form[`broken-${e.event}`].checked;
+    }
+    if (e.event === 'yoga60') {
+      extra.yogaPose = Number(form[`yogaPose-${e.event}`].value);
+    }
+    const pt = calcPoint(e.event, value, extra);
+    logs[idx] = {
+      event: e.event,
+      team,
+      classCode,
+      name,
+      value,
+      ...extra,
+      point: pt,
+      timestamp: Date.now(),
+    };
+    await fetch('/api/event-score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(logs),
+    });
+    await fetch('/api/update-teams-from-events', { method: 'POST' });
+    // 編集も socket イベントで再描画
+    form.querySelector('button[type="submit"]').textContent = '保存';
+    form.onsubmit = null;
+    form.reset();
+    document.getElementById(`point-${e.event}`).textContent = 'ポイント: 0';
+  };
+}
+
+// Socket.IOで履歴もリアルタイム更新したい場合は
+//      socket.on('teamsUpdated', () => updateEventLog());
+// チーム合計更新(teamsUpdated)ではイベント個票は再取得しない（ダブルレンダー防止）
+// 代わりに eventScoreUpdated をサーバー(server.js)側で emit しているのでそれを購読
+socket.on('eventScoreUpdated', () => {
+  updateEventLog(); // 1回だけ再描画 → 矢印が正しく↑↓になる
+});
+
+// ページ初期化時にランキングのみ表示
+fetchData();
+
+// 種目別ランキングも表示
+updateEventLog();
+
+// ページ初期化時に履歴表示
+renderForms();
+fetchData();
+updateEventLog();
+
+// 種目別ランキング描画
+// 矢印生成共通ヘルパー（チーム得点ランキングと同じロジック）
+function buildRankArrow(prevRank, curRank, team) {
+  let img = '';
+  let alt = '';
+  if (typeof prevRank !== 'number') {
+    img = 'images/new.png';
+    alt = 'NEW';
+  } else if (prevRank > curRank) {
+    img = 'images/up.png';
+    alt = 'UP';
+  } else if (prevRank < curRank) {
+    img = 'images/down.png';
+    alt = 'DOWN';
+  } else {
+    img = 'images/default.png';
+    alt = 'SAME';
+  }
+  // チームカラー枠は維持
+  const teamClass = team ? `team-${team}` : '';
+  return `<span class="arrow move-arrow ${teamClass}"><img src="${img}" alt="${alt}" style="width:24px;height:24px;display:block;margin:auto;" /></span>`;
+}
+
+function renderEventRankings(logs) {
+  const root = document.getElementById('event-rankings');
+  const colorMap = { RED: '#ff3333', BLUE: '#3399ff', YELLOW: '#ffcc00', GREEN: '#33cc66' };
+
+  const prevAll = JSON.parse(localStorage.getItem('prevEventRanks') || '{}');
+  const nextAll = {};
+
+  const norm = (v) => (v === null || v === undefined || v === '' ? '_' : String(v));
+  const entryId = (e) => [e.team, norm(e.classCode), norm(e.name)].join('|');
+
+  // 記録値による比較用メトリック取得
+  function performanceValue(rec) {
+    // 壊した扱いは最上位に
+    if (rec.broken) return Number.MAX_SAFE_INTEGER;
+    // 基本はそのまま value
+    return Number(rec.value) || 0;
+  }
+
+  root.innerHTML = EVENTS.map((ev) => {
+    const filtered = logs.filter((e) => e.event === ev.key);
+
+    // 記録値(kg/回数/秒) 降順。記録値同じなら point 降順で安定化
+    const sorted = [...filtered].sort((a, b) => {
+      const diff = performanceValue(b) - performanceValue(a);
+      if (diff !== 0) return diff;
+      return (b.point || 0) - (a.point || 0);
+    });
+
+    // 同値は同順位 (コンペ方式)
+    let lastMetric = null;
+    let lastRank = 0;
+    sorted.forEach((r, i) => {
+      const metric = performanceValue(r);
+      if (lastMetric !== null && metric === lastMetric) {
+        r._rank = lastRank;
+      } else {
+        r._rank = i + 1;
+        lastMetric = metric;
+        lastRank = r._rank;
+      }
+    });
+
+    const top3 = sorted.filter((r) => r._rank <= 3);
+    nextAll[ev.key] = {};
+
+    // 全員の順位を保存（次回比較用）
+    sorted.forEach((r) => {
+      nextAll[ev.key][entryId(r)] = r._rank;
+    });
+
+    const rows =
+      top3.length === 0
+        ? '<div class="rank-item empty" style="color:#888;">記録なし</div>'
+        : top3
+            .map((r) => {
+              const id = entryId(r);
+              const prevRank = (prevAll[ev.key] || {})[id];
+              const curRank = r._rank;
+              const arrow = buildRankArrow(prevRank, curRank);
+              const name = r.name ? r.name : '<span style="color:#aaa;">未入力</span>';
+              const classCode = r.classCode ? r.classCode : '<span style="color:#aaa;">未入力</span>';
+              const color = colorMap[r.team] || '#666';
+              return `
+  <div class="event-athlete-row team-${r.team}" style="border-color:${color};">
+    <div class="arrow">${arrow}</div>
+    <div class="athlete-name">
+      <span class="class">(${classCode})</span><span>${name}</span>
+    </div>
+    <div class="record">${r.value}${ev.unit} / ${r.point}pt</div>
+  </div>
+`;
+            })
+            .join('');
+    return `
+            <div class="ranking event-ranking-card">
+              <div style="font-weight:bold;font-size:18px;border-bottom:1px solid #eee;background:#fafafa; text-align: center;">
+                ${ev.label} 上位3名
+              </div>
+              ${rows}
+            </div>`;
+  }).join('');
+
+  localStorage.setItem('prevEventRanks', JSON.stringify(nextAll));
+}

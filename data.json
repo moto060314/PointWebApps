@@ -14,8 +14,10 @@
   {
     "name": "YELLOW",
     "cosplay": 0,
-    "muscle": 0,
-    "events": {}
+    "muscle": 23,
+    "events": {
+      "grip": 100
+    }
   },
   {
     "name": "GREEN",
