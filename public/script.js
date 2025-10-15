@@ -552,7 +552,7 @@ function buildRankArrow(prevRank, curRank, team) {
     img = 'images/down.png';
     alt = 'DOWN';
   } else {
-    img = 'images/default.png';
+    img = 'images/nochange.png';
     alt = 'SAME';
   }
   // チームカラー枠は維持
